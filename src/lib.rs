@@ -15,9 +15,10 @@ lazy_static! {
     static ref ACCEPTED_LANGS: Vec<&'static str> = vec!["en", "fr"];
 }
 
+#[derive(Debug)]
 pub struct EcWeatherFeed {
-    city_code: String,
-    lang: String,
+    pub city_code: String,
+    pub lang: String,
 }
 
 pub struct InitError {
@@ -42,7 +43,13 @@ impl EcWeatherFeed {
         })
     }
 
-    pub fn query(&self) -> String {
-       "Query Data".to_string()
+    pub async fn query(&self) -> Result<String, reqwest::Error> {
+        let lang_char = self.lang.chars().nth(0).unwrap();
+        let url = format!("https://weather.gc.ca/rss/city/{city}_{lang}.xml", city = self.city_code, lang = lang_char);
+        println!("url = {}", url);
+        let body = reqwest::get(url.as_str())
+            .await?;
+        let response = body.text().await?;
+        Ok(response)
     }
 }

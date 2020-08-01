@@ -1,15 +1,21 @@
 extern crate clap;
 
 use std::borrow::Borrow;
+use std::future::Future;
 use std::process;
 
 use clap::{App, Arg};
+use tokio::prelude::*;
+use tokio::task::JoinHandle;
+
 use ec_weather_rust::EcWeatherFeed;
 
 static CITY: &str = "city";
 static LANG: &str = "lang";
 
-fn main() {
+
+#[tokio::main]
+async fn main() {
     let app = App::new("Environment Canada Weather CLI")
         .version("1.0")
         .about("Get weather from Environment Canada and print it out")
@@ -39,7 +45,17 @@ fn main() {
         process::exit(1);
     });
 
+    process(feed).await.expect("ERROR");
+}
 
-    let feed = feed.query();
-    println!("{}", feed);
+fn process(feed: EcWeatherFeed) -> JoinHandle<()> {
+    let handle = tokio::spawn(async move {
+        if let Ok(result) = feed.query().await {
+            println!(
+                "{}",
+                result
+            )
+        }
+    });
+    handle
 }

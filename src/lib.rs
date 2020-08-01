@@ -1,8 +1,6 @@
 #[macro_use]
 extern crate lazy_static;
 
-use std::error::Error;
-
 #[cfg(test)]
 mod tests {
     #[test]
@@ -46,10 +44,17 @@ impl EcWeatherFeed {
     pub async fn query(&self) -> Result<String, reqwest::Error> {
         let lang_char = self.lang.chars().nth(0).unwrap();
         let url = format!("https://weather.gc.ca/rss/city/{city}_{lang}.xml", city = self.city_code, lang = lang_char);
-        println!("url = {}", url);
-        let body = reqwest::get(url.as_str())
+        let response = reqwest::get(url.as_str())
             .await?;
-        let response = body.text().await?;
-        Ok(response)
+        // if not a 200 code, will Err
+        match response.error_for_status() {
+            Ok(res) => {
+                let text = res.text().await?;
+                Ok(text)
+            }
+            Err(e) => {
+                Err(e)
+            }
+        }
     }
 }

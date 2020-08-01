@@ -1,12 +1,10 @@
 extern crate clap;
 
-use std::borrow::Borrow;
-use std::future::Future;
 use std::process;
 
 use clap::{App, Arg};
+#[allow(unused_imports)]
 use tokio::prelude::*;
-use tokio::task::JoinHandle;
 
 use ec_weather_rust::EcWeatherFeed;
 
@@ -38,24 +36,27 @@ async fn main() {
     //      so same lifetime as App
     let city = matches.value_of(CITY).unwrap();
     let lang = matches.value_of(LANG).unwrap();
-    println!("lang: {}, city: {}", lang, city);
 
-    let feed = EcWeatherFeed::new(city.to_string(), lang.to_string()).unwrap_or_else(|e| {
-        eprintln!("Error: {}", e.message);
-        process::exit(1);
-    });
-
-    process(feed).await.expect("ERROR");
+    let feed = EcWeatherFeed::new(city.to_string(), lang.to_string())
+        .unwrap_or_else(|e| {
+            eprintln!("Error: {}", e.message);
+            process::exit(1);
+        });
+    process(feed).await;
 }
 
-fn process(feed: EcWeatherFeed) -> JoinHandle<()> {
-    let handle = tokio::spawn(async move {
-        if let Ok(result) = feed.query().await {
-            println!(
-                "{}",
-                result
-            )
+async fn process(feed: EcWeatherFeed) {
+    let result = feed.query().await;
+    match result {
+        Ok(data) => {
+            println!("{}", data);
         }
-    });
-    handle
+        Err(e) => {
+            if e.status().unwrap().eq(&reqwest::StatusCode::NOT_FOUND) {
+                eprintln!("Error: City code not found: {}", feed.city_code);
+            } else {
+                eprintln!("Error: {}", e);
+            }
+        }
+    }
 }

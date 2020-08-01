@@ -8,6 +8,7 @@ pub struct EcWeatherFeed {
     pub lang: String,
 }
 
+#[derive(Debug)]
 pub struct InitError {
     pub message: String
 }
@@ -45,5 +46,30 @@ impl EcWeatherFeed {
                 Err(e)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn correct_init() {
+        static CITY: &str = "city-code";
+        static LANG: &str = "en";
+        let feed = EcWeatherFeed::new(CITY.to_string(), LANG.to_string());
+        let feed = feed.unwrap_or_else(|e| {
+            panic!("Did not correctly initialize and threw error: {:?}", e);
+        });
+        assert_eq!(feed.city_code, CITY.to_string());
+        assert_eq!(feed.lang, LANG.to_string());
+    }
+
+    #[test]
+    fn bad_lang() {
+        let bad = EcWeatherFeed::new("any".to_string(), "bad".to_string());
+        assert!(bad.is_err());
+        let err = bad.unwrap_err();
+        assert!(err.message.contains("bad"));
     }
 }

@@ -60,5 +60,5 @@ async fn process(feed: EcWeatherFeed) {
     };
 
     let feed = parse_feed_from_str(&data);
-    println!("{}", feed);
+    println!("{:?}", feed);
 }

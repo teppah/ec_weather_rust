@@ -13,8 +13,6 @@ lazy_static! {
 #[derive(Debug)]
 pub struct ParsedFeed {
     pub title: String,
-    pub feed_link: String,
-    pub page_link: String,
     pub last_updated: String,
     pub entries: Vec<Entry>,
 }
@@ -36,8 +34,6 @@ impl ParsedFeed {
     fn new_empty() -> ParsedFeed {
         ParsedFeed {
             title: String::new(),
-            feed_link: String::new(),
-            page_link: String::new(),
             last_updated: String::new(),
             entries: Vec::with_capacity(15)
             ,
@@ -53,8 +49,6 @@ impl Display for ParsedFeed {
 
 const TITLE: &'static str = "title";
 const LINK: &'static str = "link";
-const SELF_LINK: &'static str = "self";
-const RELATED_LINK: &'static str = "related";
 const UPDATE_DATE: &'static str = "updated";
 
 const ENTRY: &'static str = "entry";
@@ -62,33 +56,42 @@ const CATEGORY: &'static str = "category";
 const SUMMARY: &'static str = "summary";
 
 
-pub fn parse_feed_from_str(feed: &str) -> ParsedFeed {
+pub fn parse_feed_from_str(feed: &str) -> Result<ParsedFeed, Box<dyn std::error::Error>> {
     let feed = feed.as_bytes();
     let reader = BufReader::new(feed);
     let mut parser = EventReader::new(reader);
 
     let mut parsed = ParsedFeed::new_empty();
     loop {
-        let e = parser.next();
+        let e = parser.next()?;
         match e {
-            Ok(XmlEvent::StartElement { name, attributes, namespace }) => {
+            XmlEvent::StartElement { name, attributes, namespace } => {
                 let local = name.local_name;
                 match local.as_str() {
                     ENTRY => {
                         println!("entry");
+                        loop {
+                            let inside_entry = parser.next()?;
+                            match inside_entry {
+                                XmlEvent::EndElement { name, .. } => {
+                                    if name.local_name == ENTRY {
+                                        break;
+                                    }
+                                }
+                                s => {}
+                            }
+                        }
                     }
-                    LINK => {}
-                    TITLE => {}
+                    TITLE => {
+                        let text = parser.next()?;
+                    }
                     UPDATE_DATE => {}
                     _ => ()
                 }
             }
-            Ok(XmlEvent::EndDocument) => break,
-            Ok(_) => (),
-            Err(e) => {
-                eprintln!("Error parsing document: {}", e);
-            }
+            XmlEvent::EndDocument => break,
+            _ => (),
         }
     };
-    parsed
+    Ok(parsed)
 }

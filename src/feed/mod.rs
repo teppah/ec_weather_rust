@@ -1,6 +1,7 @@
 lazy_static! {
     static ref ACCEPTED_LANGS: Vec<&'static str> = vec!["en", "fr"];
 }
+pub mod parsed;
 
 #[derive(Debug)]
 pub struct EcWeatherFeed {

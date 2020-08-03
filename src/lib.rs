@@ -3,7 +3,8 @@ extern crate lazy_static;
 
 pub use feed::EcWeatherFeed;
 pub use feed::InitError;
-
+pub use feed::parsed::ParsedFeed;
+pub use feed::parsed::Entry;
 
 #[cfg(test)]
 mod tests {

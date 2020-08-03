@@ -5,6 +5,7 @@ pub use feed::EcWeatherFeed;
 pub use feed::InitError;
 pub use feed::parsed::ParsedFeed;
 pub use feed::parsed::Entry;
+pub use feed::parsed::parse_feed_from_str;
 
 #[cfg(test)]
 mod tests {

@@ -1,17 +1,13 @@
-use std::io::BufReader;
 use std::process;
 
 use clap::{App, Arg};
-use xml::EventReader;
-use xml::reader::XmlEvent;
-
-use ec_weather_rust::EcWeatherFeed;
-
 #[allow(unused_imports)]
 use tokio::prelude::*;
 
-static CITY: &str = "city";
-static LANG: &str = "lang";
+use ec_weather_rust::{EcWeatherFeed, parse_feed_from_str};
+
+const CITY: &str = "city";
+const LANG: &str = "lang";
 
 
 #[tokio::main]
@@ -63,24 +59,6 @@ async fn process(feed: EcWeatherFeed) {
         }
     };
 
-    let file = BufReader::new(data.as_bytes());
-    let mut parser = EventReader::new(file);
-
-    loop {
-        let e = parser.next();
-        match e {
-            Ok(XmlEvent::StartElement { name, attributes, namespace }) => {
-                println!("----");
-                println!("new tag: {}", name.local_name);
-            }
-            Ok(XmlEvent::Characters(str)) => {
-                println!("{}", str);
-            }
-            Ok(XmlEvent::EndDocument) => break,
-            Ok(_) => (),
-            Err(e) => {
-                eprintln!("Error parsing document: {}", e);
-            }
-        }
-    }
+    let feed = parse_feed_from_str(&data);
+    println!("{}", feed);
 }

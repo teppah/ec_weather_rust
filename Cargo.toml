@@ -11,3 +11,4 @@ clap = "2.33.1"
 reqwest = { version = "0.10.7", features = ["json"] }
 tokio = { version = "0.2", features = ["full"] }
 lazy_static = "1.4.0"
+xml-rs = "0.8.3"

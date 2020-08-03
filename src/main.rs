@@ -1,12 +1,14 @@
-extern crate clap;
-
+use std::io::BufReader;
 use std::process;
 
 use clap::{App, Arg};
-#[allow(unused_imports)]
-use tokio::prelude::*;
+use xml::EventReader;
+use xml::reader::XmlEvent;
 
 use ec_weather_rust::EcWeatherFeed;
+
+#[allow(unused_imports)]
+use tokio::prelude::*;
 
 static CITY: &str = "city";
 static LANG: &str = "lang";
@@ -47,15 +49,37 @@ async fn main() {
 
 async fn process(feed: EcWeatherFeed) {
     let result = feed.query().await;
-    match result {
+    let data = match result {
         Ok(data) => {
-            println!("{}", data);
+            data
         }
         Err(e) => {
             if e.status().unwrap().eq(&reqwest::StatusCode::NOT_FOUND) {
-                eprintln!("Error: City code not found: {}", feed.city_code);
+                eprintln!("Error: city code not found: {}", feed.city_code);
             } else {
                 eprintln!("Error: {}", e);
+            }
+            return;
+        }
+    };
+
+    let file = BufReader::new(data.as_bytes());
+    let mut parser = EventReader::new(file);
+
+    loop {
+        let e = parser.next();
+        match e {
+            Ok(XmlEvent::StartElement { name, attributes, namespace }) => {
+                println!("----");
+                println!("new tag: {}", name.local_name);
+            }
+            Ok(XmlEvent::Characters(str)) => {
+                println!("{}", str);
+            }
+            Ok(XmlEvent::EndDocument) => break,
+            Ok(_) => (),
+            Err(e) => {
+                eprintln!("Error parsing document: {}", e);
             }
         }
     }
